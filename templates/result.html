@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plant Disease Detector 🌿</title>
+</head>
+<body>
+    <h1>Latest Prediction</h1>
+    {% if result.predictions %}
+        <p><strong>Class:</strong> {{ result.top }}</p>
+        <p><strong>Confidence:</strong> {{ result.confidence }}</p>
+    {% else %}
+        <p>No predictions yet. Waiting for ESP32 to send an image...</p>
+    {% endif %}
+</body>
+</html>
