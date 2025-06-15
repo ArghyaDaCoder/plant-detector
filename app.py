@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from PIL import Image
 import io
 import requests
@@ -6,6 +6,7 @@ import json
 import os
 import csv
 from datetime import datetime, timedelta
+import uuid
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
@@ -16,17 +17,20 @@ ROBOFLOW_VERSION = "1"
 ROBOFLOW_URL = f"https://detect.roboflow.com/{ROBOFLOW_MODEL}/{ROBOFLOW_VERSION}?api_key={ROBOFLOW_API_KEY}"
 
 CSV_FILE = "inference_log.csv"
+IMAGE_FOLDER = "static/images"
+
+os.makedirs(IMAGE_FOLDER, exist_ok=True)
 
 # Ensure CSV exists with headers
 if not os.path.exists(CSV_FILE):
     with open(CSV_FILE, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(["timestamp", "inference", "confidence"])
+        writer.writerow(["timestamp", "inference", "confidence", "image_name"])
 
 def time_ago(timestamp_str):
     try:
         timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
-        now = datetime.now()  # Use local time directly
+        now = datetime.utcnow() + timedelta(hours=5, minutes=30)  # convert UTC to IST
         diff = now - timestamp
         minutes = int(diff.total_seconds() / 60)
         if minutes < 1:
@@ -50,6 +54,8 @@ def get_data():
             reader = csv.DictReader(f)
             for row in list(reader)[-20:]:
                 row["timestamp"] = time_ago(row["timestamp"])
+                # Add image URL path here
+                row["image_url"] = f"/static/images/{row['image_name']}"
                 entries.append(row)
     return jsonify(entries)
 
@@ -58,7 +64,11 @@ def upload_image():
     if request.data:
         try:
             img = Image.open(io.BytesIO(request.data)).convert("RGB")
-            img = img.resize((640, 640))
+            img = img.resize((240, 240))
+
+            image_name = f"{uuid.uuid4().hex}.jpg"
+            image_path = os.path.join(IMAGE_FOLDER, image_name)
+            img.save(image_path, format="JPEG", quality=60)
 
             buffer = io.BytesIO()
             img.save(buffer, format="JPEG")
@@ -84,11 +94,11 @@ def upload_image():
                 inference = "Couldn't identify"
                 confidence = "0.0"
 
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Use local time
+            timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
             with open(CSV_FILE, mode='a', newline='') as file:
                 writer = csv.writer(file)
-                writer.writerow([timestamp, inference, confidence])
+                writer.writerow([timestamp, inference, confidence, image_name])
 
             return response.text, 200, {'Content-Type': 'text/plain'}
 
