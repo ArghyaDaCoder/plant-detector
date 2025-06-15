@@ -5,9 +5,9 @@ import requests
 import json
 import os
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__, template_folder="templates", static_folder="static")
 
 # Roboflow Config
 ROBOFLOW_API_KEY = "4dCEXNNecDUWPWHlylMJ"
@@ -23,14 +23,35 @@ if not os.path.exists(CSV_FILE):
         writer = csv.writer(file)
         writer.writerow(["timestamp", "inference", "confidence"])
 
+def time_ago(timestamp_str):
+    try:
+        timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+        now = datetime.utcnow() + timedelta(hours=5, minutes=30)  # convert UTC to IST
+        diff = now - timestamp
+        minutes = int(diff.total_seconds() / 60)
+        if minutes < 1:
+            return "Just now"
+        elif minutes == 1:
+            return "1 minute ago"
+        else:
+            return f"{minutes} minutes ago"
+    except:
+        return timestamp_str
+
 @app.route('/')
 def show_result():
+    return render_template("result.html")
+
+@app.route('/data')
+def get_data():
     entries = []
     if os.path.exists(CSV_FILE):
         with open(CSV_FILE, newline='') as f:
             reader = csv.DictReader(f)
-            entries = list(reader)[-20:]  # Show only the last 20 entries
-    return render_template("result.html", entries=entries)
+            for row in list(reader)[-20:]:
+                row["timestamp"] = time_ago(row["timestamp"])
+                entries.append(row)
+    return jsonify(entries)
 
 @app.route('/upload', methods=['POST'])
 def upload_image():
@@ -43,7 +64,7 @@ def upload_image():
             img.save(buffer, format="JPEG")
             buffer.seek(0)
 
-            print("📤 Sending to Roboflow...")
+            print("\U0001F4E4 Sending to Roboflow...")
 
             response = requests.post(
                 ROBOFLOW_URL,
@@ -51,7 +72,7 @@ def upload_image():
                 data={"name": "esp32_upload"}
             )
 
-            print("📩 Roboflow responded:", response.text)
+            print("\U0001F4E9 Roboflow responded:", response.text)
 
             result = response.json()
 
@@ -63,7 +84,7 @@ def upload_image():
                 inference = "Couldn't identify"
                 confidence = "0.0"
 
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
             with open(CSV_FILE, mode='a', newline='') as file:
                 writer = csv.writer(file)
@@ -72,7 +93,7 @@ def upload_image():
             return response.text, 200, {'Content-Type': 'text/plain'}
 
         except Exception as e:
-            print("🔥 Error processing image:", e)
+            print("\U0001F525 Error processing image:", e)
             return jsonify({"error": str(e)}), 500
 
     return jsonify({"error": "No image data received"}), 400
