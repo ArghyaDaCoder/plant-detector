@@ -5,7 +5,7 @@ import requests
 import json
 import os
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime
 import uuid
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -30,17 +30,22 @@ if not os.path.exists(CSV_FILE):
 def time_ago(timestamp_str):
     try:
         timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
-        now = datetime.utcnow() + timedelta(hours=5, minutes=30)  # convert UTC to IST
+        now = datetime.utcnow()
         diff = now - timestamp
         minutes = int(diff.total_seconds() / 60)
         if minutes < 1:
             return "Just now"
         elif minutes == 1:
             return "1 minute ago"
-        else:
+        elif minutes < 60:
             return f"{minutes} minutes ago"
+        elif minutes < 120:
+            return "1 hour ago"
+        else:
+            hours = minutes // 60
+            return f"{hours} hours ago"
     except:
-        return timestamp_str
+        return "Unknown time"
 
 @app.route('/')
 def show_result():
@@ -54,7 +59,6 @@ def get_data():
             reader = csv.DictReader(f)
             for row in list(reader)[-20:]:
                 row["timestamp"] = time_ago(row["timestamp"])
-                # Add image URL path here
                 row["image_url"] = f"/static/images/{row['image_name']}"
                 entries.append(row)
     return jsonify(entries)
@@ -94,6 +98,7 @@ def upload_image():
                 inference = "Couldn't identify"
                 confidence = "0.0"
 
+            # Save timestamp in UTC for consistency
             timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
             with open(CSV_FILE, mode='a', newline='') as file:
@@ -109,4 +114,4 @@ def upload_image():
     return jsonify({"error": "No image data received"}), 400
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
