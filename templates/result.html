@@ -1,82 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FarmGuard</title>
   <style>
     body {
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f0f8f5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      padding: 0;
+      background: #f3f3f3;
     }
+
     header {
-      width: 100%;
-      background-color: #03a3bf;
+      background: #4CAF50;
       color: white;
+      padding: 1em;
+      font-size: 1.5em;
       text-align: center;
-      padding: 1rem;
-      font-size: 1.5rem;
-      font-weight: bold;
     }
+
     .container {
-      width: 95%;
-      max-width: 800px;
-      margin-top: 1rem;
+      padding: 1em;
+      max-width: 700px;
+      margin: auto;
     }
-    .entry {
-      background-color: #ffffff;
-      margin: 0.5rem 0;
-      padding: 1rem;
-      border: 1px solid #ccc;
+
+    .card {
+      display: flex;
+      align-items: center;
+      background: white;
+      padding: 1em;
+      margin-bottom: 1em;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .card img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
       border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-right: 1em;
     }
-    .entry span.label {
-      font-weight: bold;
-      display: inline-block;
-      width: 100px;
+
+    .info {
+      flex-grow: 1;
     }
-    @media (max-width: 600px) {
-      .entry span.label {
-        display: block;
-        width: auto;
-        margin-bottom: 4px;
+
+    .info h4 {
+      margin: 0 0 0.3em 0;
+    }
+
+    @media screen and (max-width: 600px) {
+      .card {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .card img {
+        margin: 0 0 0.5em 0;
       }
     }
   </style>
-</head>
-<body>
-  <header>FarmGuard</header>
-  <div class="container" id="log-container">
-    Loading latest results...
-  </div>
   <script>
     async function fetchData() {
       const res = await fetch('/data');
       const data = await res.json();
-      const container = document.getElementById('log-container');
-      if (data.length === 0) {
-        container.innerHTML = '<p>No data received yet.</p>';
-        return;
-      }
+      const container = document.getElementById('data-container');
       container.innerHTML = '';
+
       data.reverse().forEach(entry => {
-        const div = document.createElement('div');
-        div.className = 'entry';
-        div.innerHTML = `
-          <div><span class="label">Time:</span> ${entry.timestamp}</div>
-          <div><span class="label">Inference:</span> ${entry.inference}</div>
-          <div><span class="label">Confidence:</span> ${entry.confidence}%</div>
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const img = document.createElement('img');
+        img.src = entry.image_url;
+
+        const info = document.createElement('div');
+        info.className = 'info';
+        info.innerHTML = `
+          <h4>${entry.inference}</h4>
+          <p>Confidence: ${entry.confidence}%</p>
+          <p>${entry.timestamp}</p>
         `;
-        container.appendChild(div);
+
+        card.appendChild(img);
+        card.appendChild(info);
+        container.appendChild(card);
       });
     }
-    setInterval(fetchData, 10000); // every 3 seconds
-    fetchData();
+
+    setInterval(fetchData, 5000);
+    window.onload = fetchData;
   </script>
+</head>
+<body>
+  <header>FarmGuard</header>
+  <div class="container">
+    <div id="data-container"></div>
+  </div>
 </body>
 </html>
