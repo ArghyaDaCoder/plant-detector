@@ -1,77 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FarmGuard</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
       margin: 0;
-      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f8f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-
-    .header {
-      background-color: #2e7d32;
+    header {
+      width: 100%;
+      background-color: #03a3bf;
       color: white;
-      padding: 20px;
       text-align: center;
-      font-size: 2em;
+      padding: 1rem;
+      font-size: 1.5rem;
       font-weight: bold;
     }
-
     .container {
-      padding: 20px;
+      width: 95%;
+      max-width: 800px;
+      margin-top: 1rem;
     }
-
     .entry {
-      background: white;
-      border-left: 5px solid #4caf50;
-      margin-bottom: 15px;
-      padding: 10px 15px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      background-color: #ffffff;
+      margin: 0.5rem 0;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-
-    .timestamp {
+    .entry span.label {
       font-weight: bold;
-      color: #555;
+      display: inline-block;
+      width: 100px;
     }
-
-    .info {
-      margin-top: 5px;
-    }
-
-    .failed {
-      color: red;
-      font-style: italic;
-    }
-
-    hr {
-      border: none;
-      height: 1px;
-      background-color: #ddd;
+    @media (max-width: 600px) {
+      .entry span.label {
+        display: block;
+        width: auto;
+        margin-bottom: 4px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="header">FarmGuard</div>
-  <div class="container">
-    {% if entries %}
-      {% for entry in entries %}
-        <div class="entry">
-          <div class="timestamp">📅 {{ entry.timestamp }}</div>
-          <div class="info">
-            {% if entry.inference == "Couldn't identify" %}
-              <span class="failed">❌ Couldn't identify the disease/plant</span>
-            {% else %}
-              🧠 Inference: <strong>{{ entry.inference }}</strong><br>
-              🎯 Confidence: {{ entry.confidence }}%
-            {% endif %}
-          </div>
-        </div>
-      {% endfor %}
-    {% else %}
-      <p>No entries yet. Waiting for ESP32-CAM to upload...</p>
-    {% endif %}
+  <header>FarmGuard</header>
+  <div class="container" id="log-container">
+    Loading latest results...
   </div>
+  <script>
+    async function fetchData() {
+      const res = await fetch('/data');
+      const data = await res.json();
+      const container = document.getElementById('log-container');
+      if (data.length === 0) {
+        container.innerHTML = '<p>No data received yet.</p>';
+        return;
+      }
+      container.innerHTML = '';
+      data.reverse().forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.innerHTML = `
+          <div><span class="label">Time:</span> ${entry.timestamp}</div>
+          <div><span class="label">Inference:</span> ${entry.inference}</div>
+          <div><span class="label">Confidence:</span> ${entry.confidence}%</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+    setInterval(fetchData, 3000); // every 3 seconds
+    fetchData();
+  </script>
 </body>
 </html>
