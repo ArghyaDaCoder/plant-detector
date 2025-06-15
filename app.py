@@ -26,7 +26,7 @@ if not os.path.exists(CSV_FILE):
 def time_ago(timestamp_str):
     try:
         timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
-        now = datetime.utcnow() + timedelta(hours=5, minutes=30)  # convert UTC to IST
+        now = datetime.now()  # Use local time directly
         diff = now - timestamp
         minutes = int(diff.total_seconds() / 60)
         if minutes < 1:
@@ -84,7 +84,7 @@ def upload_image():
                 inference = "Couldn't identify"
                 confidence = "0.0"
 
-            timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Use local time
 
             with open(CSV_FILE, mode='a', newline='') as file:
                 writer = csv.writer(file)
