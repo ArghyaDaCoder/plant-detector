@@ -4,6 +4,8 @@ import io
 import requests
 import json
 import os
+import csv
+from datetime import datetime
 
 app = Flask(__name__, template_folder="templates")
 
@@ -13,18 +15,22 @@ ROBOFLOW_MODEL = "classify-and-conditionally-detect-single-label-classification-
 ROBOFLOW_VERSION = "1"
 ROBOFLOW_URL = f"https://detect.roboflow.com/{ROBOFLOW_MODEL}/{ROBOFLOW_VERSION}?api_key={ROBOFLOW_API_KEY}"
 
+CSV_FILE = "inference_log.csv"
+
+# Ensure CSV exists with headers
+if not os.path.exists(CSV_FILE):
+    with open(CSV_FILE, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["timestamp", "inference", "confidence"])
+
 @app.route('/')
 def show_result():
-    if os.path.exists("result.json"):
-        with open("result.json", "r") as f:
-            result = json.load(f)
-    else:
-        result = {
-            "top": "Waiting for ESP32-CAM upload...",
-            "confidence": "0.0",
-            "predictions": []
-        }
-    return render_template("result.html", result=result)
+    entries = []
+    if os.path.exists(CSV_FILE):
+        with open(CSV_FILE, newline='') as f:
+            reader = csv.DictReader(f)
+            entries = list(reader)[-20:]  # Show only the last 20 entries
+    return render_template("result.html", entries=entries)
 
 @app.route('/upload', methods=['POST'])
 def upload_image():
@@ -48,8 +54,20 @@ def upload_image():
             print("📩 Roboflow responded:", response.text)
 
             result = response.json()
-            with open("result.json", "w") as f:
-                json.dump(result, f)
+
+            if 'predictions' in result and len(result['predictions']) > 0:
+                top_prediction = result['predictions'][0]
+                inference = top_prediction.get('class', 'Unknown')
+                confidence = str(round(top_prediction.get('confidence', 0) * 100, 2))
+            else:
+                inference = "Couldn't identify"
+                confidence = "0.0"
+
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            with open(CSV_FILE, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([timestamp, inference, confidence])
 
             return response.text, 200, {'Content-Type': 'text/plain'}
 

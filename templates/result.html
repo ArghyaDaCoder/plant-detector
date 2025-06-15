@@ -1,15 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Plant Disease Detector 🌿</title>
+  <title>FarmGuard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      background-color: #2e7d32;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .entry {
+      background: white;
+      border-left: 5px solid #4caf50;
+      margin-bottom: 15px;
+      padding: 10px 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .timestamp {
+      font-weight: bold;
+      color: #555;
+    }
+
+    .info {
+      margin-top: 5px;
+    }
+
+    .failed {
+      color: red;
+      font-style: italic;
+    }
+
+    hr {
+      border: none;
+      height: 1px;
+      background-color: #ddd;
+    }
+  </style>
 </head>
 <body>
-    <h1>Latest Prediction</h1>
-    {% if result.predictions %}
-        <p><strong>Class:</strong> {{ result.top }}</p>
-        <p><strong>Confidence:</strong> {{ result.confidence }}</p>
+  <div class="header">FarmGuard</div>
+  <div class="container">
+    {% if entries %}
+      {% for entry in entries %}
+        <div class="entry">
+          <div class="timestamp">📅 {{ entry.timestamp }}</div>
+          <div class="info">
+            {% if entry.inference == "Couldn't identify" %}
+              <span class="failed">❌ Couldn't identify the disease/plant</span>
+            {% else %}
+              🧠 Inference: <strong>{{ entry.inference }}</strong><br>
+              🎯 Confidence: {{ entry.confidence }}%
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
     {% else %}
-        <p>No predictions yet. Waiting for ESP32 to send an image...</p>
+      <p>No entries yet. Waiting for ESP32-CAM to upload...</p>
     {% endif %}
+  </div>
 </body>
 </html>
