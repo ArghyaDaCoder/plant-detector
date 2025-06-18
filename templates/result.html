@@ -75,7 +75,8 @@
         card.className = 'card';
 
         const img = document.createElement('img');
-        img.src = entry.image_url;
+        // Add cache-busting query param to force fresh image from server
+        img.src = entry.image_url + '?v=' + new Date().getTime();
 
         const info = document.createElement('div');
         info.className = 'info';
