@@ -67,13 +67,16 @@ def get_data():
 def upload_image():
     if request.data:
         try:
-            img = Image.open(io.BytesIO(request.data)).convert("RGB")
-            img = img.resize((240, 240))
-
+            timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
             image_name = f"{uuid.uuid4().hex}.jpg"
             image_path = os.path.join(IMAGE_FOLDER, image_name)
+
+            # Save original image
+            img = Image.open(io.BytesIO(request.data)).convert("RGB")
+            img = img.resize((240, 240))
             img.save(image_path, format="JPEG", quality=60)
 
+            # Save in memory buffer for Roboflow
             buffer = io.BytesIO()
             img.save(buffer, format="JPEG")
             buffer.seek(0)
@@ -97,9 +100,6 @@ def upload_image():
             else:
                 inference = "Couldn't identify"
                 confidence = "0.0"
-
-            # Save timestamp in UTC for consistency
-            timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
             with open(CSV_FILE, mode='a', newline='') as file:
                 writer = csv.writer(file)
