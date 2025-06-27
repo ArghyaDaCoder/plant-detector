@@ -54,14 +54,40 @@ def show_result():
 @app.route('/data')
 def get_data():
     entries = []
+    details_map = {}
+
+    # Load plant disease info
+    with open("plant_info.csv") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            codename = row["Codename"]
+            details_map[codename] = row
+
+    # Load inference logs
     if os.path.exists(CSV_FILE):
         with open(CSV_FILE, newline='') as f:
             reader = csv.DictReader(f)
             for row in list(reader)[-20:]:
-                row["timestamp"] = time_ago(row["timestamp"])
-                row["image_url"] = f"/static/images/{row['image_name']}"
-                entries.append(row)
+                codename = row["inference"]
+                info = details_map.get(codename, {
+                    "Plant_Name": "Unknown",
+                    "Disease": "Unknown",
+                    "Description": "No info available.",
+                    "Cure": "N/A"
+                })
+
+                entry = {
+                    "timestamp": time_ago(row["timestamp"]),
+                    "image_url": f"/static/images/{row['image_name']}",
+                    "Plant_Name": info["Plant_Name"],
+                    "Disease": info["Disease"],
+                    "Description": info["Description"],
+                    "Cure": info["Cure"]
+                }
+
+                entries.append(entry)
     return jsonify(entries)
+
 
 @app.route('/upload', methods=['POST'])
 def upload_image():

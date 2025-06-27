@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FarmGuard</title>
   <style>
     body {
@@ -20,15 +20,23 @@
       text-align: center;
     }
 
+    .toggle-container {
+      text-align: center;
+      margin: 1em;
+    }
+
+    .toggle-container input {
+      margin-left: 0.5em;
+    }
+
     .container {
       padding: 1em;
-      max-width: 700px;
+      max-width: 1000px;
       margin: auto;
     }
 
     .card {
       display: flex;
-      align-items: center;
       background: white;
       padding: 1em;
       margin-bottom: 1em;
@@ -36,34 +44,64 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 
+    .card.healthy {
+      background-color: #e0f7e0;
+    }
+
+    .card.diseased {
+      background-color: #ffe5e5;
+    }
+
+    .column {
+      flex: 1;
+      padding: 0 1em;
+    }
+
     .card img {
-      width: 80px;
-      height: 80px;
+      width: 120px;
+      height: 120px;
       object-fit: cover;
       border-radius: 8px;
-      margin-right: 1em;
     }
 
-    .info {
-      flex-grow: 1;
+    .plant-header {
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-bottom: 0.3em;
     }
 
-    .info h4 {
-      margin: 0 0 0.3em 0;
+    .disease-status {
+      color: #555;
+      margin-bottom: 0.5em;
     }
 
-    @media screen and (max-width: 600px) {
+    .timestamp {
+      font-size: 0.9em;
+      color: gray;
+    }
+
+    .description,
+    .cure {
+      margin-bottom: 0.5em;
+    }
+
+    @media screen and (max-width: 768px) {
       .card {
         flex-direction: column;
-        text-align: center;
+      }
+
+      .column {
+        padding: 0.5em 0;
       }
 
       .card img {
-        margin: 0 0 0.5em 0;
+        margin: auto;
       }
     }
   </style>
   <script>
+    let showHealthy = true;
+
     async function fetchData() {
       const res = await fetch('/data');
       const data = await res.json();
@@ -71,25 +109,50 @@
       container.innerHTML = '';
 
       data.reverse().forEach(entry => {
+        if (!showHealthy && entry.Disease === "Healthy") return;
+
         const card = document.createElement('div');
         card.className = 'card';
+        card.classList.add(entry.Disease === "Healthy" ? "healthy" : "diseased");
 
+        // Column 1: Image
+        const col1 = document.createElement('div');
+        col1.className = 'column';
         const img = document.createElement('img');
-        // Add cache-busting query param to force fresh image from server
         img.src = entry.image_url + '?v=' + new Date().getTime();
+        col1.appendChild(img);
 
-        const info = document.createElement('div');
-        info.className = 'info';
-        info.innerHTML = `
-          <h4>${entry.inference}</h4>
-          <p>Confidence: ${entry.confidence}%</p>
-          <p>${entry.timestamp}</p>
+        // Column 2: Info
+        const col2 = document.createElement('div');
+        col2.className = 'column';
+        col2.innerHTML = `
+          <div class="plant-header">${entry.Plant_Name || 'Unknown Plant'}</div>
+          <div class="disease-status">
+            ${entry.Disease === 'Healthy' ? '✅ Healthy' : '🚨 ' + entry.Disease}
+          </div>
+          <div class="timestamp">${entry.timestamp}</div>
         `;
 
-        card.appendChild(img);
-        card.appendChild(info);
+        // Column 3: Description & Cure (only if diseased)
+        const col3 = document.createElement('div');
+        col3.className = 'column';
+        if (entry.Disease && entry.Disease !== 'Healthy') {
+          col3.innerHTML = `
+            <div class="description"><strong>Description:</strong> ${entry.Description}</div>
+            <div class="cure"><strong>Cure:</strong> ${entry.Cure}</div>
+          `;
+        }
+
+        card.appendChild(col1);
+        card.appendChild(col2);
+        card.appendChild(col3);
         container.appendChild(card);
       });
+    }
+
+    function toggleHealthy(checkbox) {
+      showHealthy = checkbox.checked;
+      fetchData();
     }
 
     setInterval(fetchData, 5000);
@@ -98,6 +161,12 @@
 </head>
 <body>
   <header>FarmGuard</header>
+  <div class="toggle-container">
+    <label>
+      Show Healthy Plants
+      <input type="checkbox" checked onchange="toggleHealthy(this)">
+    </label>
+  </div>
   <div class="container">
     <div id="data-container"></div>
   </div>
