@@ -147,7 +147,7 @@ def process_in_background(image_path, timestamp, image_name):
 
             with open(crop_path, "rb") as cf:
                 classify_response = requests.post(
-                    f"https://detect.roboflow.com/YOUR_CLASSIFIER_MODEL_HERE/1?api_key=4dCEXNNecDUWPWHlylMJ",  # ⛳ TODO
+                    ROBOFLOW_URL,  # ⛳ TODO
                     files={"file": cf}
                 )
                 classify_result = classify_response.json()
