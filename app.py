@@ -153,8 +153,15 @@ def process_in_background(image_path, timestamp, image_name):
                 classify_result = classify_response.json()
                 print("🔍 Classification Result:", json.dumps(classify_result, indent=2))
 
-            label = classify_result['predictions'][0]['class']
-            confidence = classify_result['predictions'][0]['confidence']
+            predictions = classify_result.get("predictions", [])
+            if not predictions:
+                print("😶 No predictions returned by classifier:", classify_result)
+                continue  # Skip this crop if nothing predicted
+
+            top_prediction = predictions[0]  # now safe!
+            label = top_prediction["class"]
+            confidence = top_prediction["confidence"]
+
 
             with open(CSV_FILE, mode='a', newline='') as file:
                 writer = csv.writer(file)
