@@ -7,6 +7,7 @@ import os
 import csv
 from datetime import datetime
 import uuid
+import cv2
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
