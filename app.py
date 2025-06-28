@@ -94,50 +94,80 @@ def upload_image():
     if request.data:
         try:
             timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-            image_name = f"{uuid.uuid4().hex}.jpg"
-            image_path = os.path.join(IMAGE_FOLDER, image_name)
+            original_name = f"{uuid.uuid4().hex}.jpg"
+            original_path = os.path.join(IMAGE_FOLDER, original_name)
 
-            # Save original image
+            # Save and prepare image
             img = Image.open(io.BytesIO(request.data)).convert("RGB")
-            img = img.resize((240, 240))
-            img.save(image_path, format="JPEG", quality=60)
+            img.save(original_path, format="JPEG", quality=60)
 
-            # Save in memory buffer for Roboflow
-            buffer = io.BytesIO()
-            img.save(buffer, format="JPEG")
-            buffer.seek(0)
+            # 👉 1. Send to Leaf Detection AI (model #1)
+            leaf_model_url = "https://detect.roboflow.com/leaf-detection-x2pwn/1?api_key=4dCEXNNecDUWPWHlylMJ"
+            with open(original_path, "rb") as f:
+                leaf_response = requests.post(leaf_model_url, files={"file": f})
+            boxes = leaf_response.json().get("predictions", [])
 
-            print("\U0001F4E4 Sending to Roboflow...")
+            if not boxes:
+                print("🚫 No leaves detected")
+                return jsonify({"error": "No leaves found"}), 200
 
-            response = requests.post(
-                ROBOFLOW_URL,
-                files={"file": buffer},
-                data={"name": "esp32_upload"}
-            )
+            image_cv = cv2.imread(original_path)
+            all_logs = []
 
-            print("\U0001F4E9 Roboflow responded:", response.text)
+            # Folder for cropped images
+            cropped_folder = os.path.join(IMAGE_FOLDER, "temp")
+            os.makedirs(cropped_folder, exist_ok=True)
 
-            result = response.json()
+            for i, pred in enumerate(boxes):
+                # 📦 Crop leaf
+                x = int(pred["x"] - pred["width"] / 2)
+                y = int(pred["y"] - pred["height"] / 2)
+                w = int(pred["width"])
+                h = int(pred["height"])
+                crop = image_cv[y:y+h, x:x+w]
 
-            if 'predictions' in result and len(result['predictions']) > 0:
-                top_prediction = result['predictions'][0]
-                inference = top_prediction.get('class', 'Unknown')
-                confidence = str(round(top_prediction.get('confidence', 0) * 100, 2))
-            else:
-                inference = "Couldn't identify"
-                confidence = "0.0"
+                crop_name = f"crop_{uuid.uuid4().hex}.jpg"
+                crop_path = os.path.join(cropped_folder, crop_name)
+                cv2.imwrite(crop_path, crop)
 
+                # 👉 2. Send cropped leaf to Classification AI (model #2)
+                with open(crop_path, "rb") as cf:
+                    classify_response = requests.post(
+                        ROBOFLOW_URL,
+                        files={"file": cf},
+                        data={"name": f"leaf_crop_{i}"}
+                    )
+
+                classify_result = classify_response.json()
+                if 'predictions' in classify_result and len(classify_result['predictions']) > 0:
+                    top_pred = classify_result['predictions'][0]
+                    inference = top_pred.get('class', 'Unknown')
+                    confidence = str(round(top_pred.get('confidence', 0) * 100, 2))
+                else:
+                    inference = "Couldn't identify"
+                    confidence = "0.0"
+
+                all_logs.append([timestamp, inference, confidence, original_name])
+
+                # 🧹 Delete cropped image
+                os.remove(crop_path)
+
+            # Delete temp folder
+            os.rmdir(cropped_folder)
+
+            # 📝 Log all entries
             with open(CSV_FILE, mode='a', newline='') as file:
                 writer = csv.writer(file)
-                writer.writerow([timestamp, inference, confidence, image_name])
+                writer.writerows(all_logs)
 
-            return response.text, 200, {'Content-Type': 'text/plain'}
+            return jsonify({"status": "done", "detected_leaves": len(all_logs)}), 200
 
         except Exception as e:
-            print("\U0001F525 Error processing image:", e)
+            print("🔥 Error:", e)
             return jsonify({"error": str(e)}), 500
 
     return jsonify({"error": "No image data received"}), 400
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
