@@ -115,40 +115,47 @@ def upload_image():
     return jsonify({"error": "No image data received"}), 400
 
 
-
 def process_in_background(image_path, timestamp, image_name):
     try:
         print("🧠 Background task started")
-        image_cv = cv2.imread(image_path)
 
-        # Call Roboflow object detector for bounding boxes
+        print("🖼️ Image saved at:", image_path)
+        image_cv = cv2.imread(image_path)
+        print("🧪 Image shape:", image_cv.shape)
+
+        # 🔍 Send to object detector
         with open(image_path, "rb") as original:
             detect_response = requests.post(
-                "https://detect.roboflow.com/leaf-detection-x2pwn/1?api_key=YOUR_API_KEY",
+                "https://detect.roboflow.com/leaf-detection-x2pwn/1?api_key=4dCEXNNecDUWPWHlylMJ",
                 files={"file": original}
             )
         detect_result = detect_response.json()
-        predictions = detect_result.get("predictions", [])
 
-        print(f"📦 Detected {len(predictions)} leaves")
+        print("🔍 Full Detection Response:\n", json.dumps(detect_result, indent=2))
+
+        # Filter predictions by confidence
+        predictions = [p for p in detect_result.get("predictions", []) if p["confidence"] > 0.5]
+
+        print(f"📦 Detected {len(predictions)} leaves with >50% confidence")
 
         for i, pred in enumerate(predictions):
             x, y, w, h = int(pred["x"]), int(pred["y"]), int(pred["width"]), int(pred["height"])
             crop = image_cv[y - h//2 : y + h//2, x - w//2 : x + w//2]
             crop_path = os.path.join("static/images", f"{uuid.uuid4().hex}_crop.jpg")
             cv2.imwrite(crop_path, crop)
+            print(f"🌱 Cropped leaf saved at: {crop_path}")
 
             with open(crop_path, "rb") as cf:
                 classify_response = requests.post(
-                    f"https://detect.roboflow.com/YOUR_CLASSIFIER_MODEL_HERE/1?api_key=YOUR_API_KEY",
+                    f"https://detect.roboflow.com/YOUR_CLASSIFIER_MODEL_HERE/1?api_key=4dCEXNNecDUWPWHlylMJ",  # ⛳ TODO
                     files={"file": cf}
                 )
                 classify_result = classify_response.json()
+                print("🔍 Classification Result:", json.dumps(classify_result, indent=2))
 
             label = classify_result['predictions'][0]['class']
             confidence = classify_result['predictions'][0]['confidence']
 
-            # Save entry to CSV
             with open(CSV_FILE, mode='a', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow([timestamp, label, round(confidence*100, 2), image_name])
@@ -157,6 +164,7 @@ def process_in_background(image_path, timestamp, image_name):
     
     except Exception as e:
         print("💥 Error in background task:", e)
+
 
 
 if __name__ == '__main__':
