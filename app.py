@@ -11,6 +11,9 @@ import cv2
 from threading import Thread
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
+@app.before_first_request
+def init_csv():
+    ensure_csv_has_camera_column()
 
 # Roboflow Config
 ROBOFLOW_API_KEY = "4dCEXNNecDUWPWHlylMJ"
