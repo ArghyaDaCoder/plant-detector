@@ -24,7 +24,7 @@ IMAGE_FOLDER = "static/images"
 os.makedirs(IMAGE_FOLDER, exist_ok=True)
 # at the top, after imports and CSV_FILE declaration:
 
-# Check if CSV exists and has 'camera' column, else recreate it
+'''# Check if CSV exists and has 'camera' column, else recreate it
 def ensure_csv_has_camera_column():
     header = None
     if os.path.exists(CSV_FILE):
@@ -39,10 +39,15 @@ def ensure_csv_has_camera_column():
         print("🔄 Recreating CSV with camera column…")
         with open(CSV_FILE, mode='w', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(["timestamp", "inference", "confidence", "image_name", "camera"])
+            writer.writerow(["timestamp", "inference", "confidence", "image_name", "camera"])'''
 
 # Call it once on startup
-ensure_csv_has_camera_column()
+# FORCE-RESET inference_log.csv so we always have the right header
+with open(CSV_FILE, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(["timestamp", "inference", "confidence", "image_name", "camera"])
+print("📁 inference_log.csv header reset with 'camera' column")
+
 
 # Ensure CSV exists with headers
 '''if not os.path.exists(CSV_FILE):
