@@ -11,9 +11,6 @@ import cv2
 from threading import Thread
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
-@app.before_first_request
-def init_csv():
-    ensure_csv_has_camera_column()
 
 # Roboflow Config
 ROBOFLOW_API_KEY = "4dCEXNNecDUWPWHlylMJ"
@@ -48,10 +45,10 @@ def ensure_csv_has_camera_column():
 ensure_csv_has_camera_column()
 
 # Ensure CSV exists with headers
-if not os.path.exists(CSV_FILE):
+'''if not os.path.exists(CSV_FILE):
     with open(CSV_FILE, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(["timestamp", "inference", "confidence", "image_name", "camera"])
+        writer.writerow(["timestamp", "inference", "confidence", "image_name", "camera"])'''
 
 
 def time_ago(timestamp_str):
