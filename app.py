@@ -162,7 +162,7 @@ def process_in_background(image_path, timestamp, image_name, cam_name):
 
                 with open(CSV_FILE, mode='a', newline='') as file:
                     writer = csv.writer(file)
-                    writer.writerow([timestamp, label, round(confidence*100, 2), image_name])
+                    writer.writerow([timestamp, label, round(confidence*100, 2), image_name, cam_name])
 
 
         print("✅ Background task done")
