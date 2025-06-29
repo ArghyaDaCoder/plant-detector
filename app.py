@@ -152,12 +152,18 @@ def process_in_background(image_path, timestamp, image_name, cam_name):
                 classify_result = classify_response.json()
                 print("🔍 Classification Result:", json.dumps(classify_result, indent=2))
 
-            label = classify_result['predictions'][0]['class']
-            confidence = classify_result['predictions'][0]['confidence']
+                if classify_result.get("predictions") and len(classify_result["predictions"]) > 0:
+                    label = classify_result['predictions'][0]['class']
+                    confidence = classify_result['predictions'][0]['confidence']
+                else:
+                    label = "Unknown"
+                    confidence = 0.0
 
-            with open(CSV_FILE, mode='a', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow([timestamp, label, round(confidence*100, 2), image_name, cam_name])
+
+                with open(CSV_FILE, mode='a', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerow([timestamp, label, round(confidence*100, 2), image_name])
+
 
         print("✅ Background task done")
 
