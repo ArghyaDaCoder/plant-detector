@@ -79,12 +79,12 @@
       font-size: 0.9em;
       color: gray;
     }
-      .camera-source {
-    font-size: 0.95em;
-    color: #007b5e;
-    margin-bottom: 0.3em;
-    }
 
+    .camera-source {
+      font-size: 0.95em;
+      color: #007b5e;
+      margin-bottom: 0.3em;
+    }
 
     .description,
     .cure {
@@ -129,15 +129,16 @@
         col1.appendChild(img);
 
         // Column 2: Info
-       col2.innerHTML = `
-        <div class="plant-header">${entry.Plant_Name || 'Unknown Plant'}</div>
-        <div class="disease-status">
-          ${entry.Disease === 'Healthy' ? '✅ Healthy' : '🚨 ' + entry.Disease}
-        </div>
-        <div class="camera-source">📷 Scan from ${entry.camera || "UnknownCam"}</div>
-        <div class="timestamp">${entry.timestamp}</div>
-      `;
-
+        const col2 = document.createElement('div');
+        col2.className = 'column';
+        col2.innerHTML = `
+          <div class="plant-header">${entry.Plant_Name || 'Unknown Plant'}</div>
+          <div class="disease-status">
+            ${entry.Disease === 'Healthy' ? '✅ Healthy' : '🚨 ' + entry.Disease}
+          </div>
+          <div class="camera-source">📷 Scan from ${entry.Camera_Name || "Unknown Cam"}</div>
+          <div class="timestamp">${entry.timestamp}</div>
+        `;
 
         // Column 3: Description & Cure (only if diseased)
         const col3 = document.createElement('div');
