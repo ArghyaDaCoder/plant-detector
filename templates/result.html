@@ -136,7 +136,7 @@
           <div class="disease-status">
             ${entry.Disease === 'Healthy' ? '✅ Healthy' : '🚨 ' + entry.Disease}
           </div>
-          <div class="camera-source">📷 Scan from ${entry.Camera_Name || "Unknown Cam"}</div>
+          <div class="camera-source">📷 Scan from ${entry.camera || "Unknown Cam"}</div>
           <div class="timestamp">${entry.timestamp}</div>
         `;
 
