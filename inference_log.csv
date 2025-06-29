@@ -1,0 +1,9 @@
+timestamp,inference,confidence,image_name,camera
+2025-06-29 20:28:07,Unknown,0.0,b78aaeafac4948baa7ec212a3a034e62.jpg,Cam1
+2025-06-29 20:28:07,Pepper__bell___healthy,99.88,b78aaeafac4948baa7ec212a3a034e62.jpg,Cam1
+2025-06-29 20:28:07,Pepper__bell___healthy,99.25,b78aaeafac4948baa7ec212a3a034e62.jpg,Cam1
+2025-06-29 20:28:07,Pepper__bell___healthy,55.95,b78aaeafac4948baa7ec212a3a034e62.jpg,Cam1
+2025-06-29 20:28:07,Pepper__bell___healthy,95.67,b78aaeafac4948baa7ec212a3a034e62.jpg,Cam1
+2025-06-29 20:28:07,Pepper__bell___healthy,99.29,b78aaeafac4948baa7ec212a3a034e62.jpg,Cam1
+2025-06-29 20:28:07,Pepper__bell___healthy,93.98,b78aaeafac4948baa7ec212a3a034e62.jpg,Cam1
+2025-06-29 20:28:07,Pepper__bell___healthy,59.95,b78aaeafac4948baa7ec212a3a034e62.jpg,Cam1
