@@ -23,6 +23,38 @@ IMAGE_FOLDER = "static/images"
 
 os.makedirs(IMAGE_FOLDER, exist_ok=True)
 # at the top, after imports and CSV_FILE declaration:
+# Telegram Config
+TELEGRAM_BOT_TOKEN = "7299843808:AAHlBz_NnZxPauCZFyhrspxlDJtHBoqnNVo"  # Replace with your bot token
+TELEGRAM_CHAT_ID = "7239197049"      # Replace with your chat ID
+
+def send_telegram_alert(camera_name, plant_name, disease_name, cure, description):
+    time_now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    if(disease_name.lower()=="healthy"):
+        print("Healthy plant detected. Aborting sending to Telegram!\n")
+        return
+    message = (
+        f"🚨 *Disease Detected!*\n"
+        f"📷 Camera: {camera_name}\n"
+        f"🕒 Time: {time_now}\n"
+        f"🌿 Plant: {plant_name}\n"
+        f"🦠 Disease: {disease_name}\n"
+        f"💊 Cure: {cure}\n"
+        f"📝 Description: {description}"
+    )
+
+    url = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage'
+    payload = {
+        'chat_id': TELEGRAM_CHAT_ID,
+        'text': message,
+        'parse_mode': 'Markdown'
+    }
+
+    try:
+        response = requests.post(url, data=payload)
+        if response.status_code != 200:
+            print("⚠️ Failed to send Telegram alert:", response.text)
+    except Exception as e:
+        print("💥 Telegram error:", e)
 
 '''# Check if CSV exists and has 'camera' column, else recreate it
 def ensure_csv_has_camera_column():
@@ -189,6 +221,24 @@ def process_in_background(image_path, timestamp, image_name, cam_name):
                 with open(CSV_FILE, mode='a', newline='') as file:
                     writer = csv.writer(file)
                     writer.writerow([timestamp, label, round(confidence*100, 2), image_name, cam_name])
+
+# 🔍 Fetch details from plant_info.csv to send alert
+                try:
+                    with open("plant_info.csv") as f:
+                        reader = csv.DictReader(f)
+                        for row in reader:
+                            if row["Codename"] == label:
+                                send_telegram_alert(
+                                    camera_name=cam_name,
+                                    plant_name=row.get("Plant_Name", "Unknown"),
+                                    disease_name=row.get("Disease", "Unknown"),
+                                    cure=row.get("Cure", "N/A"),
+                                    description=row.get("Description", "No info")
+                                )
+                                break
+                except Exception as e:
+                    print("⚠️ Error while sending Telegram alert:", e)
+
 
 
         print("✅ Background task done")
